@@ -1,97 +1,107 @@
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import { useState } from "react";
 import { router } from "expo-router";
-
-import { auth } from "../services/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useState } from "react";
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
-} from "firebase/auth";
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { auth, db } from "../services/firebase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const loginUser = async () => {
+  const login = async () => {
     if (!email || !password) {
-      Alert.alert("Enter email & password");
+      Alert.alert("Missing details", "Enter both email and password.");
       return;
     }
 
+    setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/(tabs)");
-    } catch (e: any) {
-      Alert.alert(e.message);
-    }
-  };
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const userRef = doc(db, "users", credential.user.uid);
+      const userSnap = await getDoc(userRef);
 
-  const signupUser = async () => {
-    if (!email || !password) {
-      Alert.alert("Enter email & password");
-      return;
-    }
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: credential.user.email,
+          role: "user",
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+        });
+        router.replace("/user/TrackerBus");
+        return;
+      }
 
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/(tabs)");
-    } catch (e: any) {
-      Alert.alert(e.message);
+      await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+      const role = userSnap.data().role;
+      router.replace(role === "driver" ? "/driver" : "/user/TrackerBus");
+    } catch {
+      Alert.alert("Login failed", "Check your Firebase setup and credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        padding: 20
-      }}
-    >
-      <Text style={{ fontSize: 24 }}>Bus Tracker Login</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.subtitle}>Sign in as a user or driver.</Text>
 
       <TextInput
-        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
         onChangeText={setEmail}
-        style={{
-          borderWidth: 1,
-          marginTop: 20,
-          padding: 10
-        }}
+        placeholder="Email"
+        style={styles.input}
+        value={email}
       />
-
       <TextInput
+        onChangeText={setPassword}
         placeholder="Password"
         secureTextEntry
-        onChangeText={setPassword}
-        style={{
-          borderWidth: 1,
-          marginTop: 10,
-          padding: 10
-        }}
+        style={styles.input}
+        value={password}
       />
 
-      <TouchableOpacity
-        onPress={loginUser}
-        style={{
-          backgroundColor: "blue",
-          padding: 15,
-          marginTop: 20
-        }}
-      >
-        <Text style={{ color: "white" }}>Login</Text>
+      <TouchableOpacity disabled={loading} onPress={login} style={styles.button}>
+        <Text style={styles.buttonText}>{loading ? "Signing in..." : "Login"}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={signupUser}
-        style={{
-          backgroundColor: "green",
-          padding: 15,
-          marginTop: 10
-        }}
-      >
-        <Text style={{ color: "white" }}>Sign Up</Text>
+      <TouchableOpacity onPress={() => router.push("/signup")}>
+        <Text style={styles.link}>Create a new account</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#f8fafc" },
+  title: { color: "#0f172a", fontSize: 34, fontWeight: "900" },
+  subtitle: { color: "#64748b", fontSize: 16, marginBottom: 24, marginTop: 8 },
+  input: {
+    backgroundColor: "#ffffff",
+    borderColor: "#cbd5e1",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: "#0f172a",
+    marginBottom: 12,
+    padding: 14,
+  },
+  button: {
+    alignItems: "center",
+    backgroundColor: "#0f766e",
+    borderRadius: 8,
+    marginTop: 8,
+    padding: 16,
+  },
+  buttonText: { color: "#ffffff", fontSize: 16, fontWeight: "800" },
+  link: { color: "#0f766e", fontSize: 15, fontWeight: "800", marginTop: 18, textAlign: "center" },
+});

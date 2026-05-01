@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "bustracker",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
 
     "ios": {
       "supportsTablet": true,
@@ -24,7 +23,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -33,7 +31,6 @@
     },
 
     "web": {
-      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
 
@@ -61,8 +58,16 @@
     ],
 
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
+    },
+
+    "extra": {
+      "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAGsgLw2bHvY2F3ZPwNzeJIq3uN7MjTtbM",
+      "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "smartbustracker-63aab.firebaseapp.com",
+      "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "smartbustracker-63aab",
+      "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "smartbustracker-63aab.firebasestorage.app",
+      "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "813475567306",
+      "EXPO_PUBLIC_FIREBASE_APP_ID": "1:813475567306:web:1b0d916c888328dc7f8633"
     }
   }
 }
